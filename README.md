@@ -26,6 +26,9 @@ The keys will be the names of the attributes and the values will be ``Attrs`` in
 Here's how you could implement a generator of paths (tuples) of internal module of a given module:
 
 ```python
+from guide import Attrs
+import inspect
+
 def internal_modules(module, path=()):
     if not isinstance(module, Attrs):
         module = Attrs(module)
