@@ -46,3 +46,22 @@ def internal_modules(module, path=()):
 ('base',)
 ('util',)
 ```
+
+## Recursively collecting objects from modules, submodules, attributes...
+
+The base function for this is ``guide.tools.recollect``. 
+The following ``submodule_callables`` is simply constructed from ``recollect``.
+ 
+```pydocstring
+>>> import guide
+>>> print(*sorted(set(x.__name__ for x in guide.tools.submodule_callables(guide))), sep='\n')
+Attrs
+ObjReader
+copy_attrs
+internal_modules
+is_an_obj_of_module
+is_hashable
+not_underscore_prefixed
+recollect
+submodule_callables
+```
