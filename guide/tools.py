@@ -42,7 +42,7 @@ def is_hashable(obj):
 
 
 def recollect(obj,
-              collect_condition: Callable = lambda k, v: isinstance(v, Callable),
+              collect_condition: Callable = lambda k, v: isinstance(v, (Callable, ModuleType)),
               visit_condition: Callable = lambda k, v: isinstance(v, ModuleType),
               visited=None):
     if visited is None:
@@ -53,12 +53,14 @@ def recollect(obj,
         v = a.src
         if collect_condition(k, v):
             yield v
+        # else:
+        #     print(f"Not including {v}")
         if visit_condition(k, v) and v not in visited:
             yield from recollect(v, collect_condition, visit_condition, visited)
 
 
 def is_an_obj_of_module(obj, module):
-    return obj.__module__.startswith(module.__name__)
+    return (getattr(obj, '__module__', '') or '').startswith(module.__name__)
 
 
 def submodule_callables(module):
