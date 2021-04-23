@@ -1,5 +1,5 @@
 import os
-from py2store import cached_keys, KvReader
+from dol import cached_keys, KvReader
 
 from guide.util import copy_attrs
 

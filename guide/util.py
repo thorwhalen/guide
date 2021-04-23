@@ -1,3 +1,7 @@
+"""
+Utils
+"""
+
 
 def copy_attrs(target, source, attrs, raise_error_if_an_attr_is_missing=True):
     """Copy attributes from one object to another.

@@ -27,12 +27,6 @@ def internal_modules(module, path=()):
             yield from internal_modules(v, path=path + (k,))
 
 
-from guide import Attrs
-from types import ModuleType
-from typing import Callable
-from functools import partial
-
-
 def is_hashable(obj):
     try:
         hash(obj)
