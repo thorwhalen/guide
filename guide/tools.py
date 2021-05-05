@@ -1,9 +1,51 @@
 import inspect
 from types import ModuleType
-from typing import Callable
+from typing import Callable, Union
 from functools import partial
+from importlib import import_module
+from dataclasses import dataclass
 
+from dol import KvReader, cached_keys, filt_iter, wrap_kvs
 from guide import Attrs
+
+ModuleSource = Union[ModuleType, str]
+
+
+def ensure_module(module_src: ModuleSource):
+    if isinstance(module_src, ModuleType):
+        return module_src
+    elif isinstance(module_src, str):
+        return import_module(module_src)
+    else:
+        raise TypeError(f"Don't know how to cast this type to a module object: {type(module_src)}")
+
+
+@cached_keys
+@dataclass
+class Modules(KvReader):
+    src: ModuleSource
+    src_name: str = None
+
+    def __post_init__(self):
+        self.src = ensure_module(self.src)
+        self.src_name = self.src_name or self.src.__name__
+
+    def __iter__(self):
+        for module_path_tuple in internal_modules(self.src):
+            yield '.'.join((self.src_name, *module_path_tuple))
+
+    def __getitem__(self, k):
+        return import_module(k)
+
+
+@wrap_kvs(obj_of_data=lambda obj: {k: getattr(obj, k) for k in dir(obj)})
+class ModuleAllAttrs(Modules):
+    """Keys are module strings and values are {attr_name: attr_obj,...} dicts of the attributes of the module"""
+
+
+@wrap_kvs(obj_of_data=lambda obj: {k: getattr(obj, k) for k in dir(obj) if not k.startswith('_')})
+class ModuleAttrs(Modules):
+    """Like ModuleAllAttrs but will only give you attributes whose names don't start with an underscore."""
 
 
 def internal_modules(module, path=()):
