@@ -1,3 +1,4 @@
+"""Base objects"""
 import os
 from dol import cached_keys, KvReader
 
