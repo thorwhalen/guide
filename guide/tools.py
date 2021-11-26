@@ -13,13 +13,38 @@ from guide import Attrs
 ModuleSource = Union[ModuleType, str]
 
 
+def print_attrs_info(obj, attrs=None, include_hidden=False):
+    from i2 import Sig
+
+    if attrs is None:
+        attrs = vars(obj)
+        if not include_hidden:
+            attrs = [a for a in attrs if not a.startswith('_')]
+    if not attrs:
+        return
+    attr_obj = partial(getattr, obj)
+    attrs = list(attrs)
+    methods = list(filter(lambda a: callable(attr_obj(a)), attrs))
+    props = list(filter(lambda a: not callable(attr_obj(a)), attrs))
+    n = max(map(len, attrs))
+    i = int(isinstance(obj, type))
+    print('----- Methods -----')
+    for a in methods:
+        print(f'{a}'.rjust(n) + f": {', '.join(Sig(getattr(obj, a)).names[i:])}")
+    print('------ Props ------')
+    for a in props:
+        print(f'{a}')
+
+
 def ensure_module(module_src: ModuleSource):
     if isinstance(module_src, ModuleType):
         return module_src
     elif isinstance(module_src, str):
         return import_module(module_src)
     else:
-        raise TypeError(f"Don't know how to cast this type to a module object: {type(module_src)}")
+        raise TypeError(
+            f"Don't know how to cast this type to a module object: {type(module_src)}"
+        )
 
 
 @cached_keys
@@ -45,7 +70,11 @@ class ModuleAllAttrs(Modules):
     """Keys are module strings and values are {attr_name: attr_obj,...} dicts of the attributes of the module"""
 
 
-@wrap_kvs(obj_of_data=lambda obj: {k: getattr(obj, k) for k in dir(obj) if not k.startswith('_')})
+@wrap_kvs(
+    obj_of_data=lambda obj: {
+        k: getattr(obj, k) for k in dir(obj) if not k.startswith('_')
+    }
+)
 class ModuleAttrs(Modules):
     """Like ModuleAllAttrs but will only give you attributes whose names don't start with an underscore."""
 
@@ -79,10 +108,12 @@ def is_hashable(obj):
         return False
 
 
-def recollect(obj,
-              collect_condition: Callable = lambda k, v: isinstance(v, (Callable, ModuleType)),
-              visit_condition: Callable = lambda k, v: isinstance(v, ModuleType),
-              visited=None):
+def recollect(
+    obj,
+    collect_condition: Callable = lambda k, v: isinstance(v, (Callable, ModuleType)),
+    visit_condition: Callable = lambda k, v: isinstance(v, ModuleType),
+    visited=None,
+):
     if visited is None:
         visited = set()
     else:
@@ -119,6 +150,8 @@ def submodule_callables(module):
     is_an_obj_of_specific_module = partial(is_an_obj_of_module, module=module)
     yield from recollect(
         module,
-        collect_condition=lambda k, v: isinstance(v, Callable) and is_an_obj_of_specific_module(v),
-        visit_condition=lambda k, v: isinstance(v, ModuleType) and v.__name__.startswith(module.__name__)
+        collect_condition=lambda k, v: isinstance(v, Callable)
+        and is_an_obj_of_specific_module(v),
+        visit_condition=lambda k, v: isinstance(v, ModuleType)
+        and v.__name__.startswith(module.__name__),
     )
