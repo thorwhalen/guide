@@ -12,12 +12,99 @@ from guide import Attrs
 
 ModuleSource = Union[ModuleType, str]
 
+NO_SIGNATURE = type('NoSignature', (), {})()
 
-def print_attrs_info(obj, attrs=None, include_hidden=False):
+
+def argument_names(func, is_a_method):
     from i2 import Sig
 
+    try:
+        return Sig(func).names[bool(is_a_method) :]
+    except ValueError:
+        return NO_SIGNATURE
+
+
+def print_attrs_info(obj, attrs=None, include_hidden=False, deep=True):
+    """
+    Print
+    :param obj: An object (type or instance) you want to have information on
+    :param attrs: The specific attributes you want to know about.
+        If None, will use "all". The next arguments control what that means
+    :param include_hidden: All? No: Just the non hidden ones by defualt (i.e. not
+    starting with an underscore). Unless you specify `include_hidden=True`.
+    :param deep: True by default. If False, "all" will not include the attributes
+        defined in parents of the object.
+
+    If (as happens with some builtins) a method has no signature, and therefore we
+    can't display argument names, `NO_SIGNATURE` will be displayed instead.
+    If nothing is displayed, it means that the metho takes no arguments.
+
+    >>> from collections import namedtuple
+    >>> print_attrs_info(namedtuple, include_hidden=True)  # doctest: +NORMALIZE_WHITESPACE
+    ----- Methods -----
+             __call__: args, kwargs
+            __class__: code, globals, name, argdefs, closure
+          __delattr__: name
+              __dir__:
+               __eq__: value
+           __format__: format_spec
+               __ge__: value
+              __get__: instance, owner
+     __getattribute__: name
+               __gt__: value
+             __hash__:
+             __init__: args, kwargs
+    __init_subclass__: NO_SIGNATURE
+               __le__: value
+               __lt__: value
+               __ne__: value
+              __new__: args, kwargs
+           __reduce__:
+        __reduce_ex__: protocol
+             __repr__:
+          __setattr__: name, value
+           __sizeof__:
+              __str__:
+     __subclasshook__: NO_SIGNATURE
+    ------ Props ------
+    __annotations__
+    __closure__
+    __code__
+    __defaults__
+    __dict__
+    __doc__
+    __globals__
+    __kwdefaults__
+    __module__
+    __name__
+    __qualname__
+
+
+    If you specify an object that is not a type, it will do the same.
+    By default, `include_hidden=False`, so this will not show any names starting with
+    an underscore:
+
+    >>> print_attrs_info([1, 2, 3])  # doctest: +NORMALIZE_WHITESPACE
+    ----- Methods -----
+     append: object
+      clear:
+       copy:
+      count: value
+     extend: iterable
+      index: value, start, stop
+     insert: index, object
+        pop: index
+     remove: value
+    reverse:
+       sort: key, reverse
+    ------ Props ------
+
+    """
     if attrs is None:
-        attrs = vars(obj)
+        if deep:
+            attrs = dir(obj)
+        else:
+            attrs = vars(obj)
         if not include_hidden:
             attrs = [a for a in attrs if not a.startswith('_')]
     if not attrs:
@@ -27,13 +114,45 @@ def print_attrs_info(obj, attrs=None, include_hidden=False):
     methods = list(filter(lambda a: callable(attr_obj(a)), attrs))
     props = list(filter(lambda a: not callable(attr_obj(a)), attrs))
     n = max(map(len, attrs))
-    i = int(isinstance(obj, type))
+    is_a_method = int(isinstance(obj, type))
     print('----- Methods -----')
     for a in methods:
-        print(f'{a}'.rjust(n) + f": {', '.join(Sig(getattr(obj, a)).names[i:])}")
+        func = getattr(obj, a)
+        argnames = argument_names(func, is_a_method)
+        if argnames is NO_SIGNATURE:
+            argname_str = 'NO_SIGNATURE'
+        else:
+            argname_str = ', '.join(argnames)
+        print(f'{a}'.rjust(n) + f': {argname_str}')
     print('------ Props ------')
     for a in props:
         print(f'{a}')
+
+
+# TODO: Finish this, and use in print_attrs_info
+def attrs_info_dict(obj, attrs=None, include_hidden=False, deep=True):
+    """Yield information dicts about the attributes of an object"""
+
+    if attrs is None:
+        if deep:
+            attrs = dir(obj)
+        else:
+            attrs = vars(obj)
+        if not include_hidden:
+            attrs = [a for a in attrs if not a.startswith('_')]
+    if not attrs:
+        return
+    attr_obj = partial(getattr, obj)
+    attrs = list(attrs)
+
+    for method in filter(lambda a: callable(attr_obj(a)), attrs):
+        yield {
+            'kind': 'method',
+            'name': method,
+            'argnames': argument_names(getattr(obj, method)),
+        }
+    for prop in filter(lambda a: not callable(attr_obj(a)), attrs):
+        yield {'kind': 'property', 'name': prop}
 
 
 def ensure_module(module_src: ModuleSource):
