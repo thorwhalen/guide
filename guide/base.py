@@ -3,31 +3,11 @@ import os
 from dol import cached_keys, KvReader
 
 from guide.util import copy_attrs
+from dol import ObjReader
 
 
 def not_underscore_prefixed(x):
     return not x.startswith("_")
-
-
-class ObjReader(KvReader):
-    def __init__(self, obj):
-        self.src = obj
-        copy_attrs(
-            target=self,
-            source=self.src,
-            attrs=("__name__", "__qualname__", "__module__"),
-            raise_error_if_an_attr_is_missing=False
-        )
-
-    def __repr__(self):
-        return f"{self.__class__.__qualname__}({self.src})"
-
-    @property
-    def _source(self):
-        from warnings import warn
-
-        warn("Deprecated: Use .src instead of ._source", DeprecationWarning, 2)
-        return self.src
 
 
 # Pattern: Recursive navigation
@@ -47,13 +27,14 @@ class Attrs(ObjReader):
     ['get', 'head', 'items', 'keys', 'module_from_path', 'update_keys_cache', 'values']
 
     """
+
     def __init__(self, obj, key_filt=not_underscore_prefixed):
         super().__init__(obj)
         self._key_filt = key_filt
 
     @classmethod
     def module_from_path(
-            cls, path, key_filt=not_underscore_prefixed, name=None, root_path=None
+        cls, path, key_filt=not_underscore_prefixed, name=None, root_path=None
     ):
         import importlib.util
 
@@ -78,6 +59,9 @@ class Attrs(ObjReader):
         return f"{self.__class__.__qualname__}({self.src}, {self._key_filt})"
 
 
+psep = os.path.sep
+
+
 def _path_to_module_str(path, root_path):
     assert path.endswith(".py")
     path = path[:-3]
@@ -89,3 +73,24 @@ def _path_to_module_str(path, root_path):
     if path_parts[-1] == "__init__.py":
         path_parts = path_parts[:-1]
     return ".".join(path_parts)
+
+
+# class ObjReader(KvReader):
+#     def __init__(self, obj):
+#         self.src = obj
+#         copy_attrs(
+#             target=self,
+#             source=self.src,
+#             attrs=("__name__", "__qualname__", "__module__"),
+#             raise_error_if_an_attr_is_missing=False
+#         )
+
+#     def __repr__(self):
+#         return f"{self.__class__.__qualname__}({self.src})"
+
+#     @property
+#     def _source(self):
+#         from warnings import warn
+
+#         warn("Deprecated: Use .src instead of ._source", DeprecationWarning, 2)
+#         return self.src
