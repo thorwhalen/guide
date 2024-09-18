@@ -1,6 +1,9 @@
 """Base objects"""
+
 import os
 from dol import cached_keys, KvReader
+from functools import partial
+from typing import Callable
 
 from guide.util import copy_attrs
 from dol import ObjReader
@@ -10,6 +13,7 @@ def not_underscore_prefixed(x):
     return not x.startswith("_")
 
 
+# TODO: Violates the Liskov substitution principle. Redesign (or don't use ObjReader)
 # Pattern: Recursive navigation
 # Note moved from py2store.sources
 @cached_keys(keys_cache=set, name="Attrs")
@@ -28,8 +32,11 @@ class Attrs(ObjReader):
 
     """
 
-    def __init__(self, obj, key_filt=not_underscore_prefixed):
-        super().__init__(obj)
+    def __init__(
+        self, obj, key_filt=not_underscore_prefixed, *, obj_to_keys: Callable = dir
+    ):
+        self._obj = obj
+        self.obj_to_keys = obj_to_keys
         self._key_filt = key_filt
 
     @classmethod
@@ -50,13 +57,20 @@ class Attrs(ObjReader):
         return cls(foo, key_filt)
 
     def __iter__(self):
-        yield from filter(self._key_filt, dir(self.src))
+        yield from filter(self._key_filt, dir(self._obj))
 
     def __getitem__(self, k):
-        return self.__class__(getattr(self.src, k))
+        return self.__class__(getattr(self._obj, k))
 
     def __repr__(self):
-        return f"{self.__class__.__qualname__}({self.src}, {self._key_filt})"
+        return f"{self.__class__.__qualname__}({self._obj}, {self._key_filt})"
+
+    @property
+    def src(self):
+        from warnings import warn
+
+        warn("Deprecated: Use ._obj instead of .src", DeprecationWarning, 2)
+        return self._obj
 
 
 psep = os.path.sep

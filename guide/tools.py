@@ -238,7 +238,7 @@ def recollect(
     else:
         visited.add(obj)
     for k, a in Attrs(obj).items():
-        v = a.src
+        v = a._obj
         if collect_condition(k, v):
             yield v
         # else:
