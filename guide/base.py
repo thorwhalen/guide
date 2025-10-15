@@ -3,7 +3,7 @@
 import os
 from dol import cached_keys, KvReader
 from functools import partial
-from typing import Callable
+from collections.abc import Callable
 
 from guide.util import copy_attrs
 from dol import ObjReader

@@ -2,7 +2,8 @@
 
 import inspect
 from types import ModuleType
-from typing import Callable, Union
+from typing import Union
+from collections.abc import Callable
 from functools import partial
 from importlib import import_module
 from dataclasses import dataclass
