@@ -185,13 +185,13 @@ class Modules(KvReader):
         return import_module(k)
 
 
-@wrap_kvs(obj_of_data=lambda obj: {k: getattr(obj, k) for k in dir(obj)})
+@wrap_kvs(value_decoder=lambda obj: {k: getattr(obj, k) for k in dir(obj)})
 class ModuleAllAttrs(Modules):
     """Keys are module strings and values are {attr_name: attr_obj,...} dicts of the attributes of the module"""
 
 
 @wrap_kvs(
-    obj_of_data=lambda obj: {
+    value_decoder=lambda obj: {
         k: getattr(obj, k) for k in dir(obj) if not k.startswith('_')
     }
 )
