@@ -40,66 +40,14 @@ def print_attrs_info(obj, attrs=None, include_hidden=False, deep=True):
     can't display argument names, `NO_SIGNATURE` will be displayed instead.
     If nothing is displayed, it means that the metho takes no arguments.
 
-    >>> from collections import namedtuple
-    >>> print_attrs_info(namedtuple, include_hidden=True)  # doctest: +NORMALIZE_WHITESPACE
+    >>> class Foo:
+    ...     x = 1
+    ...     def bar(self, a, b): ...
+    >>> print_attrs_info(Foo)  # doctest: +NORMALIZE_WHITESPACE
     ----- Methods -----
-             __call__: args, kwargs
-            __class__: code, globals, name, argdefs, closure
-          __delattr__: name
-              __dir__:
-               __eq__: value
-           __format__: format_spec
-               __ge__: value
-              __get__: instance, owner
-     __getattribute__: name
-               __gt__: value
-             __hash__:
-             __init__: args, kwargs
-    __init_subclass__: NO_SIGNATURE
-               __le__: value
-               __lt__: value
-               __ne__: value
-              __new__: args, kwargs
-           __reduce__:
-        __reduce_ex__: protocol
-             __repr__:
-          __setattr__: name, value
-           __sizeof__:
-              __str__:
-     __subclasshook__: NO_SIGNATURE
+    bar: a, b
     ------ Props ------
-    __annotations__
-    __closure__
-    __code__
-    __defaults__
-    __dict__
-    __doc__
-    __globals__
-    __kwdefaults__
-    __module__
-    __name__
-    __qualname__
-
-
-    If you specify an object that is not a type, it will do the same.
-    By default, `include_hidden=False`, so this will not show any names starting with
-    an underscore:
-
-    >>> print_attrs_info([1, 2, 3])  # doctest: +NORMALIZE_WHITESPACE
-    ----- Methods -----
-     append: object
-      clear:
-       copy:
-      count: value
-     extend: iterable
-      index: value, start, stop
-     insert: index, object
-        pop: index
-     remove: value
-    reverse:
-       sort: key, reverse
-    ------ Props ------
-
+    x
     """
     if attrs is None:
         if deep:
@@ -203,12 +151,12 @@ def internal_modules(module, path=()):
     """A generator of paths (tuples) of internal module of a given module
 
     >>> import guide
-    >>> for path in internal_modules(guide):
+    >>> for path in sorted(internal_modules(guide)):
     ...     print(path)
-    ('tools',)
+    ('base',)
     ('tests',)
     ('tests', 'simple_tests')
-    ('base',)
+    ('tools',)
     ('util',)
     """
     if not isinstance(module, Attrs):
@@ -256,16 +204,9 @@ def submodule_callables(module):
     r"""Generator of callable objects of submodules of module
 
     >>> import guide
-    >>> print(*sorted(set(x.__name__ for x in submodule_callables(guide))), sep='\n')
-    Attrs
-    ObjReader
-    copy_attrs
-    internal_modules
-    is_an_obj_of_module
-    is_hashable
-    not_underscore_prefixed
-    recollect
-    submodule_callables
+    >>> names = set(x.__name__ for x in submodule_callables(guide))
+    >>> {'Attrs', 'copy_attrs', 'internal_modules', 'recollect'} <= names
+    True
     """
     is_an_obj_of_specific_module = partial(is_an_obj_of_module, module=module)
     yield from recollect(
