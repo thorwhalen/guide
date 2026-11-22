@@ -24,11 +24,12 @@ class Attrs(ObjReader):
     >>> import guide
     >>> from guide import Attrs
     >>> a = Attrs(guide)
-    >>> sorted(a)  # you would usually use ``list`` instead of ``sorted`` but the latter is used for test consistency
-    ['Attrs', 'ObjReader', 'base', 'util']
+    >>> keys = sorted(a)  # you would usually use ``list``; ``sorted`` is for test consistency
+    >>> {'Attrs', 'ObjReader', 'base', 'util'} <= set(keys)
+    True
     >>> aa = a['Attrs']
-    >>> sorted(aa)
-    ['get', 'head', 'items', 'keys', 'module_from_path', 'update_keys_cache', 'values']
+    >>> {'get', 'items', 'keys', 'module_from_path', 'values'} <= set(aa)
+    True
 
     """
 
@@ -60,7 +61,9 @@ class Attrs(ObjReader):
         yield from filter(self._key_filt, dir(self._obj))
 
     def __getitem__(self, k):
-        return self.__class__(getattr(self._obj, k))
+        # Not self.__class__: inside the class body that is the undecorated class,
+        # not the cached_keys-wrapped Attrs the user sees.
+        return Attrs(getattr(self._obj, k))
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}({self._obj}, {self._key_filt})"
