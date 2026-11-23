@@ -1,9 +1,10 @@
 
 # guide
-Simple object to navigate complex python objects
+Simple object to navigate complex python objects: browse a module, class or any object's attributes as a nested mapping.
 
-
-To install:	```pip install guide```
+```bash
+pip install guide
+```
 
 
 # Examples
